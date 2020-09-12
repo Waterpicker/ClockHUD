@@ -5,13 +5,12 @@ import com.qkninja.clockhud.reference.ConfigValues;
 import com.qkninja.clockhud.reference.Names;
 import com.qkninja.clockhud.reference.Reference;
 import com.qkninja.clockhud.utility.Algorithms;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-
-import net.minecraft.client.resources.I18n;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.LiteralText;
 
 
 /**
@@ -19,15 +18,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  *
  * @author Sam Beckmann
  */
-public class GuiDayCount extends AbstractGui {
-    private Minecraft mc;
+public class GuiDayCount extends Screen implements HudRenderCallback {
+    private MinecraftClient mc;
 
     private long endAnimationTime;
     private boolean isRunning;
     private static final int ANIMATION_TIME = 3000; // 3 second animation
 
-    public GuiDayCount(Minecraft mc) {
-        super();
+    public GuiDayCount(MinecraftClient mc) {
+        super(LiteralText.EMPTY);
         isRunning = false;
         this.mc = mc;
     }
@@ -37,10 +36,9 @@ public class GuiDayCount extends AbstractGui {
      *
      * @param event variables associated with the event.
      */
-    @SubscribeEvent(priority = EventPriority.NORMAL)
-    public void onRenderExperienceBar(RenderGameOverlayEvent.Post event) {
-        if (ConfigValues.INS.showDayCount.get() && event.getType() == RenderGameOverlayEvent.ElementType.EXPERIENCE &&
-                (isRunning || isNewDay())) {
+    @Override
+    public void onHudRender(MatrixStack matrixStack, float tickDelta) {
+       if (ConfigValues.INS.showDayCount && (isRunning || isNewDay())) {
 
             // long currentTime = Minecraft.getSystemTime();
 
@@ -63,10 +61,10 @@ public class GuiDayCount extends AbstractGui {
 
             int alpha = Math.max(getOpacityFactor((endAnimationTime - currentTime) / (float) ANIMATION_TIME), 5);
             int color = (alpha << 24) | 0xffffff;
-            float xPos = (Minecraft.getInstance().mainWindow.getScaledWidth() - mc.fontRenderer.getStringWidth(dayString) * scaleFactor) / (2 * scaleFactor);
-            float yPos = Minecraft.getInstance().mainWindow.getScaledHeight() / 7 / scaleFactor;
+            float xPos = (mc.getWindow().getScaledWidth() - mc.textRenderer.getWidth(dayString) * scaleFactor) / (2 * scaleFactor);
+            float yPos = mc.getWindow().getScaledHeight() / 7 / scaleFactor;
 
-            mc.fontRenderer.drawString(dayString, xPos, yPos, color);
+            mc.textRenderer.draw(matrixStack, dayString, xPos, yPos, color);
 
             GlStateManager.scalef(1 / scaleFactor, 1 / scaleFactor, 1 / scaleFactor);
         }
@@ -78,7 +76,7 @@ public class GuiDayCount extends AbstractGui {
      * @return if the dayTime is the specified time of a new day.
      */
     private boolean isNewDay() {
-        return Minecraft.getInstance().world.getDayTime() % Reference.DAY_TICKS == Reference.NEW_DAY_TICK;
+        return MinecraftClient.getInstance().world.getTimeOfDay() % Reference.DAY_TICKS == Reference.NEW_DAY_TICK;
     }
 
     /**
@@ -87,7 +85,7 @@ public class GuiDayCount extends AbstractGui {
      * @return String of "Day: " + day number
      */
     private String formDayString() {
-        return I18n.format(Names.Text.DAYCOUNT, Minecraft.getInstance().world.getGameTime() / Reference.DAY_TICKS);
+        return I18n.translate(Names.Text.DAYCOUNT, MinecraftClient.getInstance().world.getTimeOfDay() / Reference.DAY_TICKS);
     }
 
     /**

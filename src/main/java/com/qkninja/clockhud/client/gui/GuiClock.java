@@ -1,20 +1,21 @@
 package com.qkninja.clockhud.client.gui;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.qkninja.clockhud.reference.ConfigValues;
 import com.qkninja.clockhud.reference.Reference;
 import com.qkninja.clockhud.reference.Textures;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-import com.mojang.blaze3d.platform.GlStateManager;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.world.World;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import static net.minecraft.text.LiteralText.EMPTY;
 
 /**
  * Creates the Clock Gui.
  */
-public class GuiClock extends AbstractGui {
+public class GuiClock extends Screen implements HudRenderCallback {
     private static final int TEXTURE_SCALE = 2;
 
     private static final int SUN_WIDTH = 48 / TEXTURE_SCALE;
@@ -24,10 +25,10 @@ public class GuiClock extends AbstractGui {
     private static final int BAR_HEIGHT = 10 / TEXTURE_SCALE;
     private static final int DOT = 10 / TEXTURE_SCALE;
 
-    private Minecraft mc;
+    private MinecraftClient mc;
 
-    public GuiClock(Minecraft mc) {
-        super();
+    public GuiClock(MinecraftClient mc) {
+        super(EMPTY);
         this.mc = mc;
     }
 
@@ -37,39 +38,36 @@ public class GuiClock extends AbstractGui {
      * @param event Variables associated with the event.
      */
 
-    @SubscribeEvent(priority = EventPriority.NORMAL)
-    public void onRenderExperienceBar(RenderGameOverlayEvent.Post event) {
-        if (!ConfigValues.INS.guiActive.get() || event.isCancelable() || event.getType() != RenderGameOverlayEvent.ElementType.EXPERIENCE)
+    public void onHudRender(MatrixStack matrixStack, float delta) {
+        if (!ConfigValues.INS.guiActive)
             return;
 
         this.mc.getTextureManager().bindTexture(Textures.Gui.HUD);
 
-        GlStateManager.scaled(ConfigValues.INS.scale.get(), ConfigValues.INS.scale.get(), ConfigValues.INS.scale.get());
+        GlStateManager.scaled(ConfigValues.INS.scale, ConfigValues.INS.scale, ConfigValues.INS.scale);
 
         int xCoord;
-        if (ConfigValues.INS.centerClock.get()) {
-            xCoord = (int) ((Minecraft.getInstance().mainWindow.getScaledWidth() - (BAR_LENGTH + SUN_WIDTH - DOT) * ConfigValues.INS.scale.get()) / (2 * ConfigValues.INS.scale.get()));
+        if (ConfigValues.INS.centerClock) {
+            xCoord = (int) ((MinecraftClient.getInstance().getWindow().getScaledWidth() - (BAR_LENGTH + SUN_WIDTH - DOT) * ConfigValues.INS.scale) / (2 * ConfigValues.INS.scale));
         } else {
-            xCoord = ConfigValues.INS.xCoord.get();
+            xCoord = ConfigValues.INS.xCoord;
         }
 
         int startX = xCoord + SUN_WIDTH / 2 - (DOT / 2);
-        int startY = ConfigValues.INS.yCoord.get() + ICON_HEIGHT / 2 - BAR_HEIGHT / 2;
+        int startY = ConfigValues.INS.yCoord + ICON_HEIGHT / 2 - BAR_HEIGHT / 2;
 
         // Draw bar
-        this.blit(startX, startY, 0, 0, BAR_LENGTH, BAR_HEIGHT);
+        this.drawTexture(matrixStack, startX, startY, 0, 0, BAR_LENGTH, BAR_HEIGHT);
 
         if (isDay()) // Draw sun
         {
-            this.blit(xCoord + getScaledTime(), ConfigValues.INS.yCoord.get(), 0, BAR_HEIGHT,
-                    SUN_WIDTH, ICON_HEIGHT);
+            this.drawTexture(matrixStack, xCoord + getScaledTime(), ConfigValues.INS.yCoord, 0, BAR_HEIGHT, SUN_WIDTH, ICON_HEIGHT);
         } else // Draw moon
         {
-            this.blit(xCoord + (SUN_WIDTH - MOON_WIDTH) / 2 + getScaledTime(),
-                    ConfigValues.INS.yCoord.get(), SUN_WIDTH, BAR_HEIGHT, MOON_WIDTH, ICON_HEIGHT);
+            this.drawTexture(matrixStack, xCoord + (SUN_WIDTH - MOON_WIDTH) / 2 + getScaledTime(), ConfigValues.INS.yCoord, SUN_WIDTH, BAR_HEIGHT, MOON_WIDTH, ICON_HEIGHT);
         }
 
-        GlStateManager.scaled(1 / ConfigValues.INS.scale.get(), 1 / ConfigValues.INS.scale.get(), 1 / ConfigValues.INS.scale.get());
+        GlStateManager.scaled(1 / ConfigValues.INS.scale, 1 / ConfigValues.INS.scale, 1 / ConfigValues.INS.scale);
     }
 
     /**
@@ -112,8 +110,8 @@ public class GuiClock extends AbstractGui {
      * @return Current tick of the day.
      */
     private int getCurrentTime() {
-        World world = Minecraft.getInstance().world;
-        long time = world.getWorldInfo().getDayTime();
+        World world = MinecraftClient.getInstance().world;
+        long time = world.getTimeOfDay();
         return (int) time % Reference.DAY_TICKS;
     }
 }

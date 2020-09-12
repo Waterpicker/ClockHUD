@@ -1,7 +1,7 @@
 package com.qkninja.clockhud.client.settings;
 
 import com.qkninja.clockhud.reference.Names;
-import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.options.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 
 public class KeyBindings {

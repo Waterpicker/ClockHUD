@@ -1,16 +1,16 @@
 package com.qkninja.clockhud.utility;
 
 import com.qkninja.clockhud.reference.Reference;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Identifier;
 
 public class ResourceLocationHelper
 {
-    public static ResourceLocation getResourceLocation(String modId, String path)
+    public static Identifier getResourceLocation(String modId, String path)
     {
-        return new ResourceLocation(modId, path);
+        return new Identifier(modId, path);
     }
 
-    public static ResourceLocation getResourceLocation(String path)
+    public static Identifier getResourceLocation(String path)
     {
         return getResourceLocation(Reference.MOD_ID.toLowerCase(), path);
     }
