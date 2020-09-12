@@ -1,4 +1,4 @@
-package com.qkninja.clockhud.proxy;
+package com.qkninja.clockhud.client;
 
 import com.qkninja.clockhud.client.gui.GuiClock;
 import com.qkninja.clockhud.client.gui.GuiDayCount;
@@ -16,7 +16,7 @@ import net.minecraft.client.MinecraftClient;
 /**
  * Handles the client side of the proxy.
  */
-public class ClientProxy implements ClientModInitializer {
+public class ClientClockHud implements ClientModInitializer {
 
     private MinecraftClient mc = MinecraftClient.getInstance();
 
@@ -38,10 +38,11 @@ public class ClientProxy implements ClientModInitializer {
     public void preInit() {
         registerKeyBindings();
         AutoConfig.register(ConfigValues.class, GsonConfigSerializer::new);
+        ConfigValues.INS = AutoConfig.getConfigHolder(ConfigValues.class).getConfig();
     }
 
     public void init() {
         registerRenderers();
-        ClientTickEvents.END_CLIENT_TICK.register(a -> new KeyInputEventHandler());
+        ClientTickEvents.END_CLIENT_TICK.register(KeyInputEventHandler::onEndTick);
     }
 }
